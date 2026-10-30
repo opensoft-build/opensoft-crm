@@ -109,6 +109,18 @@ const StyledCsvTable = styled.table`
   }
 `;
 
+const StyledTextPreview = styled.pre`
+  color: ${themeCssVariables.font.color.primary};
+  font-family: ${themeCssVariables.font.family};
+  font-size: ${themeCssVariables.font.size.sm};
+  height: 100%;
+  margin: 0;
+  overflow: auto;
+  padding: ${themeCssVariables.spacing[4]};
+  white-space: pre-wrap;
+  word-break: break-word;
+`;
+
 type DocumentViewerProps = {
   documentName: string;
   documentUrl: string;
@@ -188,6 +200,7 @@ export const DocumentViewer = ({
   const [csvPreview, setCsvPreview] = useState<CsvPreviewData | undefined>(
     undefined,
   );
+  const [textPreview, setTextPreview] = useState<string | undefined>(undefined);
 
   const { extension } = getFileNameAndExtension(documentName);
   const fileExtension = isDefined(documentExtension)
@@ -203,6 +216,12 @@ export const DocumentViewer = ({
   useEffect(() => {
     if (fileExtension === 'csv') {
       fetchCsvPreview(documentUrl).then(setCsvPreview);
+    }
+
+    if (fileExtension === 'txt') {
+      fetch(documentUrl)
+        .then((response) => response.text())
+        .then(setTextPreview);
     }
   }, [documentUrl, fileExtension]);
 
@@ -270,6 +289,20 @@ export const DocumentViewer = ({
             ))}
           </tbody>
         </StyledCsvTable>
+      </StyledDocumentViewerContainer>
+    );
+  }
+
+  // Rendered as a React text node so file content is always escaped,
+  // instead of react-doc-viewer's TXTRenderer (CVE-2026-30691).
+  if (fileExtension === 'txt') {
+    return (
+      <StyledDocumentViewerContainer>
+        {isDefined(textPreview) ? (
+          <StyledTextPreview>{textPreview}</StyledTextPreview>
+        ) : (
+          <Trans>Loading...</Trans>
+        )}
       </StyledDocumentViewerContainer>
     );
   }
